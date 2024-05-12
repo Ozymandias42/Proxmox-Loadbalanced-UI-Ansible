@@ -1,0 +1,69 @@
+---
+- name: Install and configure Keepalived and HAProxy
+  hosts: ProxmoxServers
+  become: yes
+  
+  tasks:
+    - name: Install required packages
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - keepalived
+        - haproxy
+
+    #- name: Remove packages
+    #  apt:
+    #    name: "{{ item }}"
+    #    state: absent
+    #  loop:
+    #    #- haproxy
+    #    #- keepalived
+
+    - name: Copy Keepalived configuration file
+      copy:
+        src: etc-keepalived/keepalived.conf
+        dest: /etc/keepalived/keepalived.conf
+      notify: restart keepalived
+
+    - name: Copy HAProxy configuration file
+      copy:
+        src: etc-haproxy/haproxy.cfg
+        dest: /etc/haproxy/haproxy.cfg
+      notify: restart haproxy
+
+    - name: Copy HAProxy certs folder
+      copy:
+        src: etc-haproxy/certs
+        dest: /etc/haproxy/
+      notify: restart haproxy
+
+    #- name: Remove file (delete file)
+    #  ansible.builtin.file:
+    #    path: /etc/haproxy
+    #    state: absent
+
+   # - name: Remove file (delete file)
+   #   ansible.builtin.file:
+   #     path: /etc/keepalived
+   #     state: absent
+    
+
+  handlers:
+    - name: restart services
+      service:
+        name: "{{ item }}"
+        state: restarted
+      loop:
+      - keepalived
+      - haproxy
+    
+    - name: restart keepalived
+      service:
+        name: keepalived
+        state: restarted
+  
+    - name: restart haproxy
+      service:
+        name: haproxy
+        state: restarted
